@@ -28,6 +28,7 @@ public class ElementSerializer implements Serializer<Element>{
 
     @Override
     public Element deserialize(byte[] obj) {
+        System.out.println(MessageSerializer.deserialize(obj));
         return gson.fromJson(MessageSerializer.deserialize(obj), Element.class);
     }
 

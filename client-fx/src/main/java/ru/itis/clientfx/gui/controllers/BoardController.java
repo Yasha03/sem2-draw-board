@@ -1,27 +1,46 @@
 package ru.itis.clientfx.gui.controllers;
 
 
-import java.io.IOException;
+import java.awt.image.BufferedImage;
+import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import javafx.application.Platform;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.PixelFormat;
+import javafx.scene.image.PixelReader;
+import javafx.scene.image.WritablePixelFormat;
+import javafx.scene.input.DragEvent;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.TilePane;
 import javafx.scene.paint.Color;
+import org.apache.commons.collections4.CollectionUtils;
 import ru.itis.clientfx.App;
 import ru.itis.clientfx.gui.GuiManager;
 import ru.itis.clientfx.gui.observers.ShowElementsObserver;
+import ru.itis.clientfx.gui.painters.BrushPainter;
+import ru.itis.clientfx.gui.painters.EraserPainter;
+import ru.itis.clientfx.gui.painters.Painter;
 import ru.itis.message.Message;
 import ru.itis.message.MessageTypes;
 import ru.itis.models.Element;
 import ru.itis.serializers.BoardSerializer;
 import ru.itis.serializers.ElementSerializer;
+
+import javax.imageio.ImageIO;
 
 public class BoardController {
 
@@ -52,8 +71,6 @@ public class BoardController {
     @FXML
     private ScrollPane mainScrollPane;
 
-    private List<List<Double>> arrDraw;
-
     private ElementSerializer elementSerializer;
 
     private BoardSerializer boardSerializer;
@@ -74,101 +91,111 @@ public class BoardController {
         loadOldElementsRequest();
         Platform.runLater(this::showAllElement);
 
-        exitToMenuButton.setOnAction( e -> {App.getGuiManager().showMainPage();});
+        exitToMenuButton.setOnAction(e -> {
+            App.getGuiManager().showMainPage();
+        });
 
-        arrDraw = new ArrayList<>();
+        BrushPainter brushPainter = new BrushPainter(mainCanvas, Double.parseDouble(brushSize.getText()), colorPicker.getValue());
+        EraserPainter eraserPainter = new EraserPainter(mainCanvas, Double.parseDouble(brushSize.getText()));
 
         mainCanvas.addEventHandler(MouseEvent.MOUSE_PRESSED, event -> {
-            if(!eraser.isSelected()) {
-                g.beginPath();
-                g.moveTo(event.getX(), event.getY());
-                g.stroke();
+            if (!eraser.isSelected()) {
+                brushPainter.start(event);
+                brushPainter.setSize(Double.parseDouble(brushSize.getText()));
+                brushPainter.setColor(colorPicker.getValue());
+            } else {
+                eraserPainter.setSize(Double.parseDouble(brushSize.getText()));
             }
         });
 
         mainCanvas.addEventHandler(MouseEvent.MOUSE_DRAGGED, event -> {
             Double size = Double.parseDouble(brushSize.getText());
-            if(eraser.isSelected()){
-                g.clearRect(event.getX(), event.getY(), size, size);
-                List<Double> coordinatesArr = new ArrayList<>();
-                coordinatesArr.add((double) Math.round(event.getX()));
-                coordinatesArr.add((double) Math.round(event.getY()));
-                arrDraw.add(coordinatesArr);
-            }else {
-                g.setFill(colorPicker.getValue());
-                g.setStroke(colorPicker.getValue());
-
-                g.lineTo(event.getX(), event.getY());
-                g.setLineWidth(size);
-                g.stroke();
-                g.closePath();
-                g.beginPath();
-
-                List<Double> coordinatesArr = new ArrayList<>();
-                coordinatesArr.add((double) Math.round(event.getX()));
-                coordinatesArr.add((double) Math.round(event.getY()));
-                arrDraw.add(coordinatesArr);
-
-//            g.fillOval(event.getX(), event.getY(), Double.parseDouble(brushSize.getText()), Double.parseDouble(brushSize.getText()));
-
-                g.moveTo(event.getX(), event.getY());
+            if (eraser.isSelected()) {
+                eraserPainter.draw(event);
+            } else {
+                brushPainter.draw(event);
             }
         });
 
         mainCanvas.addEventHandler(MouseEvent.MOUSE_RELEASED, event -> {
             Element element;
-            if(eraser.isSelected()){
-                element = Element.builder()
-                        .id(UUID.randomUUID())
-                        .creatorId(App.getConnection().getUser().getId())
-                        .boardId(App.getConnection().getCurrentBoard().getId())
-                        .type(Element.Type.ERASER)
-                        .size(Double.parseDouble(brushSize.getText()))
-                        .value(gson.toJson(arrDraw))
-                        .color(colorPicker.getValue().toString())
-                        .build();
-            }else {
-                g.lineTo(event.getX(), event.getY());
-                g.stroke();
-                g.closePath();
-
-                element = Element.builder()
-                        .id(UUID.randomUUID())
-                        .creatorId(App.getConnection().getUser().getId())
-                        .boardId(App.getConnection().getCurrentBoard().getId())
-                        .type(Element.Type.BRUSH)
-                        .size(Double.parseDouble(brushSize.getText()))
-                        .value(gson.toJson(arrDraw))
-                        .color(colorPicker.getValue().toString())
-                        .build();
+            if (eraser.isSelected()) {
+                element = eraserPainter.end(event);
+            } else {
+                element = brushPainter.end(event);
             }
             addElementRequest(element);
             App.getConnection().getElements().add(element);
-            arrDraw = new ArrayList<>();
         });
-
-        /*mainCanvas.setOnMouseDragged(e -> {
-            double size = Double.parseDouble(brushSize.getText());
-            double x = e.getX() - size / 2;
-            double y = e.getY() - size / 2;
-
-            if(eraser.isSelected()){
-                g.clearRect(x, y, size, size);
-            }else{
-                System.out.println(x + " | " + y );
-                System.out.println("Color: " + colorPicker.getValue());
-                g.setFill(colorPicker.getValue());
-                g.fillRect(x, y, size, size);
-            }
-        });*/
     }
 
-    public void showAllElement(){
+    @FXML
+    void handleDragOver(DragEvent event) {
+        if (event.getDragboard().hasFiles()) {
+            event.acceptTransferModes(TransferMode.ANY);
+        }
+    }
+
+    @FXML
+    void handleDragDropped(DragEvent event) throws IOException {
+        List<File> files = event.getDragboard().getFiles();
+        Image img = new Image(new FileInputStream(files.get(0)));
+
+        mainCanvas.getGraphicsContext2D().drawImage(img, event.getX(), event.getY(),
+                img.getWidth(), img.getHeight());
+
+        int width = (int) img.getWidth();
+        int height = (int) img.getHeight();
+
+        BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        SwingFXUtils.fromFXImage(img, bufferedImage);
+
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        ImageIO.write(bufferedImage, "PNG", output);
+
+        Base64.Encoder encoder = Base64.getEncoder();
+        String imageBase64 = encoder.encodeToString(output.toByteArray());
+
+//        int[] rgb = new int[width * height];
+//        PixelReader reader = img.getPixelReader();
+//        reader.getPixels(0, 0, width, height, PixelFormat.getIntArgbInstance(), rgb, 0, width);
+
+//        byte[] rgb = new byte[width * height * 4];
+//        WritablePixelFormat<ByteBuffer> format = PixelFormat.getByteBgraInstance();
+//        img.getPixelReader().getPixels(0, 0, width, height, format, rgb, 0, width * 4);
+
+
+        // print
+//        mainCanvas.getGraphicsContext2D().getPixelWriter().setPixels(0, 0, width, height,
+//                PixelFormat.getIntArgbInstance(), rgb, 0, width);
+
+        List<String> finalList = new ArrayList<>();
+
+        finalList.add(String.valueOf(event.getX()));
+        finalList.add(String.valueOf(event.getY()));
+
+        finalList.add(imageBase64);
+
+
+        Element imageElement = Element.builder()
+                .id(UUID.randomUUID())
+                .creatorId(App.getConnection().getUser().getId())
+                .boardId(App.getConnection().getCurrentBoard().getId())
+                .type(Element.Type.IMAGE)
+                .size(0.0)
+                .value(gson.toJson(finalList))
+                .color(Color.rgb(0, 0, 0).toString())
+                .build();
+        App.getConnection().getElements().add(imageElement);
+        addElementRequest(imageElement);
+    }
+
+    public void showAllElement() {
         ShowElementsObserver showElementsObserver = new ShowElementsObserver(mainCanvas);
         new Thread(showElementsObserver).start();
     }
 
-    private void addElementRequest(Element element){
+    private void addElementRequest(Element element) {
         Message messageSend = Message.builder()
                 .type(MessageTypes.ADD_ELEMENT)
                 .data(elementSerializer.serialize(element))
@@ -180,7 +207,7 @@ public class BoardController {
         }
     }
 
-    public void loadOldElementsRequest(){
+    public void loadOldElementsRequest() {
         Message message = Message.builder()
                 .type(MessageTypes.GET_ALL_ELEMENT_BY_BOARD)
                 .data(boardSerializer.serialize(App.getConnection().getCurrentBoard()))
@@ -192,9 +219,8 @@ public class BoardController {
         }
     }
 
-    public void onExit(){
+    public void onExit() {
         Platform.exit();
     }
 
 }
-

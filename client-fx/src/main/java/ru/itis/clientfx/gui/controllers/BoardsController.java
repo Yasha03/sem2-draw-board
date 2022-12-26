@@ -46,8 +46,6 @@ public class BoardsController {
 
     private BoardSerializer boardSerializer;
 
-
-
     @FXML
     void initialize() {
         this.boardSerializer = new BoardSerializer();
@@ -60,15 +58,12 @@ public class BoardsController {
 
         getAllBoardsRequest();
         Platform.runLater(this::showAllBoards);
-
-
     }
 
     private void showAllBoards() {
         ShowBoardsObserver showBoardsObserver = new ShowBoardsObserver(flowPaneBorders);
         new Thread(showBoardsObserver).start();
     }
-
 
     private void getAllBoardsRequest(){
         Message messageSend = Message.builder()

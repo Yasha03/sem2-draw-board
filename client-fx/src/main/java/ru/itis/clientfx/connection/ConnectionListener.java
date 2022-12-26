@@ -77,7 +77,6 @@ public class ConnectionListener implements Runnable{
                     }
                     case MessageTypes.GET_ALL_ELEMENT_BY_BOARD -> {
                         List<Element> elements = elementSerializer.deserializeAll(message.getData());
-                        System.out.println("получил " +elements.size());
                         for(Element element : elements){
                             boolean elementIsExist = false;
                             for(Element elementExist : connection.getElements()){
@@ -86,7 +85,6 @@ public class ConnectionListener implements Runnable{
                                 }
                             }
                             if(!elementIsExist){
-                                System.out.println("добавил элемент");
                                 connection.getElements().add(element);
                             }
                         }

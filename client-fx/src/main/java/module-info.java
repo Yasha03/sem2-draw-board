@@ -2,13 +2,17 @@ module ru.itis.clientfx {
     requires javafx.controls;
     requires javafx.fxml;
 
+
     requires org.controlsfx.controls;
     requires org.kordamp.bootstrapfx.core;
 
     requires javafx.graphics;
     requires lombok;
+    requires javafx.swing;
 
     requires com.google.gson;
+    requires commons.collections4;
+
 
     requires protocol;
 
