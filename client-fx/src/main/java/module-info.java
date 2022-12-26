@@ -5,6 +5,14 @@ module ru.itis.clientfx {
     requires org.controlsfx.controls;
     requires org.kordamp.bootstrapfx.core;
 
-    opens ru.itis.clientfx to javafx.fxml;
-    exports ru.itis.clientfx;
+    requires javafx.graphics;
+    requires lombok;
+
+    requires com.google.gson;
+
+    requires protocol;
+
+    opens ru.itis.clientfx.gui.controllers to com.google.gson, javafx.fxml;
+
+    exports ru.itis.clientfx.gui;
 }
