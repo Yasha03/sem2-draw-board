@@ -56,7 +56,7 @@ public class BoardConnection implements Runnable{
         try {
             outputStream.writeMessage(message);
         } catch (IOException e) {
-            throw new BoardServerException("Failed to send message");
+//            throw new BoardServerException("Failed to send message");
         }
     }
 }
