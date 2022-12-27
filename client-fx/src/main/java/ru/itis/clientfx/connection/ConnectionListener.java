@@ -15,6 +15,7 @@ import ru.itis.serializers.ElementSerializer;
 import ru.itis.serializers.MessageSerializer;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ConnectionListener implements Runnable{
@@ -77,6 +78,8 @@ public class ConnectionListener implements Runnable{
                     }
                     case MessageTypes.GET_ALL_ELEMENT_BY_BOARD -> {
                         List<Element> elements = elementSerializer.deserializeAll(message.getData());
+//                        List<Element> elements = new ArrayList<>();
+//                        elements.add(elementSerializer.deserialize(message.getData()));
                         for(Element element : elements){
                             boolean elementIsExist = false;
                             for(Element elementExist : connection.getElements()){
@@ -94,7 +97,8 @@ public class ConnectionListener implements Runnable{
                 }
             }
         } catch (MessageTypeException | IOException | ProtocolHeaderException e) {
-            e.printStackTrace(); // TODO
+            connection.closeConnection();
         }
     }
+
 }

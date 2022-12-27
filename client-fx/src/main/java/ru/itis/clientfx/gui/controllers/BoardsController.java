@@ -36,9 +36,6 @@ public class BoardsController {
     private Button createBoardButton;
 
     @FXML
-    private Button exitToMenuButton;
-
-    @FXML
     private FlowPane flowPaneBorders;
 
     @FXML
@@ -72,7 +69,7 @@ public class BoardsController {
         try {
             App.getConnection().sendMessage(messageSend);
         } catch (IOException e) {
-            e.printStackTrace(); // TODO: 25.12.2022
+            App.getGuiManager().showError("Ошибка получения", "Не удалось получить список досок");
         }
     }
 
@@ -88,7 +85,7 @@ public class BoardsController {
         try {
             App.getConnection().sendMessage(messageSend);
         } catch (IOException e) {
-            e.printStackTrace();  // TODO: 25.12.2022
+            App.getGuiManager().showError("Ошибка добавления", "Не удалось создать доску");
         }
     }
 }

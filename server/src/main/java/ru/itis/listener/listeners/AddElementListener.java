@@ -1,5 +1,6 @@
 package ru.itis.listener.listeners;
 
+import ru.itis.exceptions.BoardServerException;
 import ru.itis.listener.AbstractEventListener;
 import ru.itis.message.Message;
 import ru.itis.message.MessageTypes;
@@ -20,7 +21,7 @@ public class AddElementListener extends AbstractEventListener {
     }
 
     @Override
-    public void handle(BoardConnection connection, Message message) {
+    public void handle(BoardConnection connection, Message message) throws BoardServerException {
         this.elementService = context.getElementService();
 
         Element element = elementSerializer.deserialize(message.getData());

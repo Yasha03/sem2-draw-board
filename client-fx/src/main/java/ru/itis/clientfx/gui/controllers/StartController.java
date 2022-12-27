@@ -51,7 +51,7 @@ public class StartController {
                 Scene scene = new Scene(fxmlLoader.load());
                 mainStage.setScene(scene);
             } catch (IOException ex) {
-                ex.printStackTrace();
+                throw new IllegalArgumentException("File register.fxml not found");
             }
         });
 
@@ -67,7 +67,7 @@ public class StartController {
             try {
                 App.getConnection().sendMessage(message);
             } catch (IOException ex) {
-                ex.printStackTrace(); // TODO
+                App.getGuiManager().showError("Ошибка входа", "Не удалось войти в аккаунт");
             }
         });
     }

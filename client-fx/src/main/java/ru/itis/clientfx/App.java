@@ -6,6 +6,7 @@ import ru.itis.clientfx.connection.ConnectionListener;
 import ru.itis.clientfx.connection.SocketConnection;
 import ru.itis.clientfx.gui.ClientWindow;
 import ru.itis.clientfx.gui.GuiManager;
+import ru.itis.exceptions.LostConnectionException;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -18,12 +19,14 @@ public class App {
     private static GuiManager guiManager;
 
     public static void main(String[] args) {
+        guiManager = new GuiManager();
         try {
             connection = new SocketConnection(InetAddress.getLocalHost(), 2031);
         } catch (UnknownHostException e) {
-            e.printStackTrace(); // TODO
+            guiManager.showError("Ошибка соединения", "Неправильно подобран адрес или порт");
+        } catch (LostConnectionException e) {
+            guiManager.showError("Ошибка соединения", "Соединение с сервером разорвано");
         }
-        guiManager = new GuiManager();
         ConnectionListener connectionListener = new ConnectionListener(connection, guiManager);
         new Thread(connectionListener).start();
         ClientWindow window = new ClientWindow();

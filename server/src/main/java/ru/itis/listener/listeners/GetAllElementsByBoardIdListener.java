@@ -1,5 +1,6 @@
 package ru.itis.listener.listeners;
 
+import ru.itis.exceptions.BoardServerException;
 import ru.itis.listener.AbstractEventListener;
 import ru.itis.message.Message;
 import ru.itis.message.MessageTypes;
@@ -27,16 +28,18 @@ public class GetAllElementsByBoardIdListener extends AbstractEventListener {
     }
 
     @Override
-    public void handle(BoardConnection connection, Message message) {
+    public void handle(BoardConnection connection, Message message) throws BoardServerException {
         this.elementService = context.getElementService();
 
         Board board = boardSerializer.deserialize(message.getData());
 
         List<Element> allElements = elementService.loadAllByBoardId(board.getId());
-        Message messageSend = Message.builder()
-                .type(MessageTypes.GET_ALL_ELEMENT_BY_BOARD)
-                .data(elementSerializer.serialize(allElements))
-                .build();
-        connection.sendMessage(messageSend);
+//        for(Element element : allElements){
+            Message messageSend = Message.builder()
+                    .type(MessageTypes.GET_ALL_ELEMENT_BY_BOARD)
+                    .data(elementSerializer.serialize(allElements))
+                    .build();
+            connection.sendMessage(messageSend);
+//        }
     }
 }

@@ -1,5 +1,6 @@
 package ru.itis.server;
 
+import ru.itis.exceptions.BoardServerException;
 import ru.itis.exceptions.MessageTypeException;
 import ru.itis.exceptions.ProtocolHeaderException;
 import ru.itis.listener.EventListenerRegister;
@@ -10,6 +11,7 @@ import ru.itis.message.MessageOutputStream;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.rmi.server.ServerCloneException;
 
 public class BoardConnection implements Runnable{
 
@@ -21,14 +23,14 @@ public class BoardConnection implements Runnable{
 
     private MessageOutputStream outputStream;
 
-    public BoardConnection(BoardServer server, Socket socket) {
+    public BoardConnection(BoardServer server, Socket socket) throws BoardServerException {
         this.server = server;
         this.socket = socket;
         try {
             this.inputStream = new MessageInputStream(socket.getInputStream());
             this.outputStream = new MessageOutputStream(socket.getOutputStream());
         } catch (IOException e) {
-            e.printStackTrace(); // TODO
+            throw new BoardServerException("Can't get IO streams");
         }
     }
 
@@ -42,19 +44,19 @@ public class BoardConnection implements Runnable{
                 listener.handle(this, message);
             }
         } catch (MessageTypeException e) {
-            e.printStackTrace(); // TODO
+            throw new IllegalArgumentException("Invalid type message");
         } catch (IOException e) {
-            e.printStackTrace(); // TODO
+            throw new BoardServerException("IO server exception. " + e);
         } catch (ProtocolHeaderException e) {
-            e.printStackTrace(); // TODO
+            throw new IllegalArgumentException("Invalid protocol header");
         }
     }
 
-    public void sendMessage(Message message){
+    public void sendMessage(Message message) throws BoardServerException {
         try {
             outputStream.writeMessage(message);
         } catch (IOException e) {
-            e.printStackTrace(); // TODO: close connection
+            throw new BoardServerException("Failed to send message");
         }
     }
 }

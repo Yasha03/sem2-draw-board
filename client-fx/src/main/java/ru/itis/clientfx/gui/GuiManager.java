@@ -10,6 +10,7 @@ import ru.itis.clientfx.gui.custom.ModalWindow;
 import ru.itis.models.Board;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class GuiManager {
 
@@ -30,6 +31,12 @@ public class GuiManager {
         });
     }
 
+    public void showError(String title, String errorInfo){
+        Platform.runLater( () -> {
+            ModalWindow.newWindow(Alert.AlertType.ERROR, title, errorInfo);
+        });
+    }
+
     public void showMainPage(){
         Platform.runLater( () -> {
             try {
@@ -37,7 +44,7 @@ public class GuiManager {
                 Scene scene = new Scene(fxmlLoader.load());
                 App.getStage().setScene(scene);
             } catch (IOException e) {
-                e.printStackTrace(); // TODO
+                throw new IllegalArgumentException("File boards.fxml not found");
             }
         });
     }
@@ -45,11 +52,12 @@ public class GuiManager {
     public void changeBoard(Board board){
         try {
             App.getConnection().setCurrentBoard(board);
+            App.getConnection().setElements(new ArrayList<>());
             FXMLLoader fxmlLoader = new FXMLLoader(ClientWindow.class.getResource("board.fxml"));
             Scene scene = new Scene(fxmlLoader.load());
             App.getStage().setScene(scene);
         } catch (IOException e) {
-            e.printStackTrace(); // TODO
+            throw new IllegalArgumentException("File board.fxml not found");
         }
     }
 

@@ -16,7 +16,7 @@ public class ClientWindow extends Application {
         App.setStage(stage);
         FXMLLoader fxmlLoader = new FXMLLoader(ClientWindow.class.getResource("start.fxml"));
         Scene scene = new Scene(fxmlLoader.load());
-        mainStage.setTitle("Hello!");
+        mainStage.setTitle("Draw board");
         mainStage.setScene(scene);
         mainStage.show();
     }

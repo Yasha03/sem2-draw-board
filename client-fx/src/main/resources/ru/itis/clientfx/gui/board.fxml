@@ -18,7 +18,10 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
+<?import javafx.collections.*?>
 
+<?import javafx.scene.control.ChoiceBox?>
+<?import java.lang.String?>
 <BorderPane prefHeight="600.0" prefWidth="900.0" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.itis.clientfx.gui.controllers.BoardController">
     <left>
         <VBox alignment="TOP_CENTER" prefWidth="150.0" style="-fx-background-color: #47A76A;" BorderPane.alignment="CENTER">
@@ -76,6 +79,15 @@
                     <TextField fx:id="brushSize" text="6" />
                     <ColorPicker fx:id="colorPicker" />
                     <CheckBox fx:id="eraser" text="ластик:" />
+                    <ChoiceBox value="brush" fx:id="chooseTool">
+                        <items>
+                            <FXCollections fx:factory="observableArrayList">
+                                <String fx:value="brush" />
+                                <String fx:value="line" />
+                                <String fx:value="square" />
+                            </FXCollections>
+                        </items>
+                    </ChoiceBox>
                 </HBox>
             </ToolBar>
         </VBox>

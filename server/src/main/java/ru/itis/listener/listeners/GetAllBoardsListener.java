@@ -1,5 +1,6 @@
 package ru.itis.listener.listeners;
 
+import ru.itis.exceptions.BoardServerException;
 import ru.itis.listener.AbstractEventListener;
 import ru.itis.message.Message;
 import ru.itis.message.MessageTypes;
@@ -22,7 +23,7 @@ public class GetAllBoardsListener extends AbstractEventListener {
     }
 
     @Override
-    public void handle(BoardConnection connection, Message message) {
+    public void handle(BoardConnection connection, Message message) throws BoardServerException {
         this.boardService = context.getBoardService();
         List<Board> boardList = boardService.loadAll();
         Message messageSend = Message.builder()

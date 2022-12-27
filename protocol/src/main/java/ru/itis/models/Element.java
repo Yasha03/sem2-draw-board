@@ -29,6 +29,8 @@ public class Element {
     public enum Type {
         BRUSH,
         ERASER,
-        IMAGE
+        IMAGE,
+        LINE,
+        SQUARE
     }
 }

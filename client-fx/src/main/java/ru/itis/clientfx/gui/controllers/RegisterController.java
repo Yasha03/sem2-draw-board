@@ -53,7 +53,7 @@ public class RegisterController {
                 Scene scene = new Scene(fxmlLoader.load());
                 mainStage.setScene(scene);
             } catch (IOException ex) {
-                ex.printStackTrace();
+                throw new IllegalArgumentException("File start.fxml not found");
             }
         });
 
@@ -70,18 +70,11 @@ public class RegisterController {
                     .type(MessageTypes.REGISTER_FORM)
                     .data(formSerializer.serialize(registerForm))
                     .build();
-
             try {
-                SocketConnection connection = App.getConnection();
-                connection.sendMessage(message);
-            } catch (UnknownHostException ex) {
-                ex.printStackTrace(); // TODO
+                App.getConnection().sendMessage(message);
             } catch (IOException ioException) {
-                ioException.printStackTrace(); // TODO
+                App.getGuiManager().showError("Ошибка регистрации", "Не удалось зарегистрировать аккаунт");
             }
-
         });
-
     }
-
 }

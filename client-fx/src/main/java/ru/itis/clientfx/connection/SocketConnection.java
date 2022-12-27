@@ -1,5 +1,6 @@
 package ru.itis.clientfx.connection;
 
+import ru.itis.exceptions.LostConnectionException;
 import ru.itis.message.Message;
 import ru.itis.message.MessageInputStream;
 import ru.itis.message.MessageOutputStream;
@@ -28,7 +29,7 @@ public class SocketConnection {
 
     private List<Element> elements;
 
-    public SocketConnection(InetAddress inetAddress, int port) {
+    public SocketConnection(InetAddress inetAddress, int port) throws LostConnectionException {
         try {
             this.socket = new Socket(inetAddress, port);
             this.inputStream = new MessageInputStream(socket.getInputStream());
@@ -36,7 +37,15 @@ public class SocketConnection {
             this.boards = new ArrayList<>();
             this.elements = new ArrayList<>();
         } catch (IOException e) {
-            e.printStackTrace(); // TODO
+            throw new LostConnectionException("The connection to the server was broken");
+        }
+    }
+
+    public void closeConnection(){
+        try {
+            socket.close();
+        } catch (IOException e) {
+            throw new IllegalArgumentException("Failed to close connections");
         }
     }
 

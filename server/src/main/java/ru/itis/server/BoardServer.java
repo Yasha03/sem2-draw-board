@@ -1,5 +1,7 @@
 package ru.itis.server;
 
+import ru.itis.exceptions.BoardServerException;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -21,19 +23,15 @@ public class BoardServer {
         this.context = new ServerContext();
     }
 
-    public void start() {
-        try {
-            this.serverSocket = new ServerSocket(port);
-            while (true) {
-                Socket socket = serverSocket.accept();
-                connectionHandler(socket);
-            }
-        } catch (IOException e) {
-            e.printStackTrace(); //TODO
+    public void start() throws BoardServerException, IOException {
+        this.serverSocket = new ServerSocket(port);
+        while (true) {
+            Socket socket = serverSocket.accept();
+            connectionHandler(socket);
         }
     }
 
-    public void connectionHandler(Socket socket) {
+    public void connectionHandler(Socket socket) throws BoardServerException {
         BoardConnection connection = new BoardConnection(this, socket);
         connections.add(connection);
         new Thread(connection).start();

@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import javafx.application.Platform;
+import javafx.collections.FXCollections;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
 import javafx.scene.canvas.Canvas;
@@ -31,9 +32,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import ru.itis.clientfx.App;
 import ru.itis.clientfx.gui.GuiManager;
 import ru.itis.clientfx.gui.observers.ShowElementsObserver;
-import ru.itis.clientfx.gui.painters.BrushPainter;
-import ru.itis.clientfx.gui.painters.EraserPainter;
-import ru.itis.clientfx.gui.painters.Painter;
+import ru.itis.clientfx.gui.painters.*;
 import ru.itis.message.Message;
 import ru.itis.message.MessageTypes;
 import ru.itis.models.Element;
@@ -71,6 +70,11 @@ public class BoardController {
     @FXML
     private ScrollPane mainScrollPane;
 
+    @FXML
+    private ChoiceBox<String> chooseTool;
+
+    private String currentTool;
+
     private ElementSerializer elementSerializer;
 
     private BoardSerializer boardSerializer;
@@ -90,19 +94,41 @@ public class BoardController {
 
         loadOldElementsRequest();
         Platform.runLater(this::showAllElement);
+        currentTool = "brush";
+        chooseTool.setOnAction( e -> {
+            currentTool = chooseTool.getValue();
+        });
 
         exitToMenuButton.setOnAction(e -> {
             App.getGuiManager().showMainPage();
         });
 
+
         BrushPainter brushPainter = new BrushPainter(mainCanvas, Double.parseDouble(brushSize.getText()), colorPicker.getValue());
         EraserPainter eraserPainter = new EraserPainter(mainCanvas, Double.parseDouble(brushSize.getText()));
+        LinePainter linePainter = new LinePainter(mainCanvas, Double.parseDouble(brushSize.getText()), colorPicker.getValue());
+        SquarePainter squarePainter = new SquarePainter(mainCanvas, Double.parseDouble(brushSize.getText()), colorPicker.getValue());
 
         mainCanvas.addEventHandler(MouseEvent.MOUSE_PRESSED, event -> {
+
             if (!eraser.isSelected()) {
-                brushPainter.start(event);
-                brushPainter.setSize(Double.parseDouble(brushSize.getText()));
-                brushPainter.setColor(colorPicker.getValue());
+                switch (currentTool){
+                    case "brush" -> {
+                        brushPainter.start(event);
+                        brushPainter.setSize(Double.parseDouble(brushSize.getText()));
+                        brushPainter.setColor(colorPicker.getValue());
+                    }
+                    case "line" -> {
+                        linePainter.start(event);
+                        linePainter.setSize(Double.parseDouble(brushSize.getText()));
+                        linePainter.setColor(colorPicker.getValue());
+                    }
+                    case "square" -> {
+                        squarePainter.start(event);
+                        squarePainter.setSize(Double.parseDouble(brushSize.getText()));
+                        squarePainter.setColor(colorPicker.getValue());
+                    }
+                }
             } else {
                 eraserPainter.setSize(Double.parseDouble(brushSize.getText()));
             }
@@ -113,16 +139,36 @@ public class BoardController {
             if (eraser.isSelected()) {
                 eraserPainter.draw(event);
             } else {
-                brushPainter.draw(event);
+                switch (currentTool){
+                    case "brush" -> {
+                        brushPainter.draw(event);
+                    }
+                    case "line" -> {
+                        linePainter.draw(event);
+                    }
+                    case "square" -> {
+                        squarePainter.draw(event);
+                    }
+                }
             }
         });
 
         mainCanvas.addEventHandler(MouseEvent.MOUSE_RELEASED, event -> {
-            Element element;
+            Element element = null;
             if (eraser.isSelected()) {
                 element = eraserPainter.end(event);
             } else {
-                element = brushPainter.end(event);
+                switch (currentTool){
+                    case "brush" -> {
+                        element = brushPainter.end(event);
+                    }
+                    case "line" -> {
+                        element = linePainter.end(event);
+                    }
+                    case "square" -> {
+                        element = squarePainter.end(event);
+                    }
+                }
             }
             addElementRequest(element);
             App.getConnection().getElements().add(element);
@@ -156,26 +202,12 @@ public class BoardController {
         Base64.Encoder encoder = Base64.getEncoder();
         String imageBase64 = encoder.encodeToString(output.toByteArray());
 
-//        int[] rgb = new int[width * height];
-//        PixelReader reader = img.getPixelReader();
-//        reader.getPixels(0, 0, width, height, PixelFormat.getIntArgbInstance(), rgb, 0, width);
-
-//        byte[] rgb = new byte[width * height * 4];
-//        WritablePixelFormat<ByteBuffer> format = PixelFormat.getByteBgraInstance();
-//        img.getPixelReader().getPixels(0, 0, width, height, format, rgb, 0, width * 4);
-
-
-        // print
-//        mainCanvas.getGraphicsContext2D().getPixelWriter().setPixels(0, 0, width, height,
-//                PixelFormat.getIntArgbInstance(), rgb, 0, width);
-
         List<String> finalList = new ArrayList<>();
 
-        finalList.add(String.valueOf(event.getX()));
-        finalList.add(String.valueOf(event.getY()));
+        finalList.add(String.valueOf(Math.round(event.getX())));
+        finalList.add(String.valueOf(Math.round(event.getY())));
 
         finalList.add(imageBase64);
-
 
         Element imageElement = Element.builder()
                 .id(UUID.randomUUID())
@@ -203,7 +235,7 @@ public class BoardController {
         try {
             App.getConnection().sendMessage(messageSend);
         } catch (IOException e) {
-            e.printStackTrace(); // TODO
+            App.getGuiManager().showError("Ошибка отправки", "Не удалось отправить элемент");
         }
     }
 
@@ -215,7 +247,7 @@ public class BoardController {
         try {
             App.getConnection().sendMessage(message);
         } catch (IOException e) {
-            e.printStackTrace(); // todo
+            App.getGuiManager().showError("Ошибка получения", "Не удалось получить элементы доски");
         }
     }
 

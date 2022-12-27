@@ -7,13 +7,20 @@ import com.google.gson.reflect.TypeToken;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.ColorPicker;
+import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import ru.itis.clientfx.App;
 import ru.itis.clientfx.gui.GuiManager;
+import ru.itis.clientfx.gui.painters.BrushPainter;
+import ru.itis.clientfx.gui.painters.EraserPainter;
+import ru.itis.clientfx.gui.painters.LinePainter;
+import ru.itis.clientfx.gui.painters.SquarePainter;
 import ru.itis.models.Element;
 
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 
 public class ShowElementsObserver implements Runnable {
@@ -45,39 +52,42 @@ public class ShowElementsObserver implements Runnable {
                 List<List<Double>> coords = gson.fromJson(element.getValue(),
                         new TypeToken<ArrayList<ArrayList<Double>>>() {
                         }.getType());
-                printBrushElement(coords, element.getSize(), element.getColor());
+                BrushPainter brushPainter = new BrushPainter(canvas, element.getSize(), (Color) Paint.valueOf(element.getColor()));
+                brushPainter.deserialize(coords);
             } else if (element.getType().equals(Element.Type.ERASER)) {
                 List<List<Double>> coords = gson.fromJson(element.getValue(),
                         new TypeToken<ArrayList<ArrayList<Double>>>() {
                         }.getType());
-                printEraserElement(coords, element.getSize());
+                EraserPainter eraserPainter = new EraserPainter(canvas, element.getSize());
+                eraserPainter.deserialize(coords);
+            } else if (element.getType().equals(Element.Type.IMAGE)) {
+                printImageElement(element.getValue());
+            } else if (element.getType().equals(Element.Type.LINE)){
+                List<List<Double>> coords = gson.fromJson(element.getValue(),
+                        new TypeToken<ArrayList<ArrayList<Double>>>() {
+                        }.getType());
+                LinePainter linePainter = new LinePainter(canvas, element.getSize(), (Color) Paint.valueOf(element.getColor()));
+                linePainter.deserialize(coords);
+            } else if(element.getType().equals(Element.Type.SQUARE)){
+                List<List<Double>> coords = gson.fromJson(element.getValue(),
+                        new TypeToken<ArrayList<ArrayList<Double>>>() {
+                        }.getType());
+                SquarePainter squarePainter = new SquarePainter(canvas, element.getSize(), (Color) Paint.valueOf(element.getColor()));
+                squarePainter.deserialize(coords);
             }
         }
     }
 
-    private void printEraserElement(List<List<Double>> coords, Double size){
-        GraphicsContext g = canvas.getGraphicsContext2D();
-        for (List<Double> coord : coords) {
-            g.clearRect(coord.get(0), coord.get(1), size, size);
-        }
+    private void printImageElement(String value) {
+        List<String> arr = gson.fromJson(value, new TypeToken<ArrayList<String>>() {
+        }.getType());
+        double x = Double.parseDouble(arr.get(0));
+        double y = Double.parseDouble(arr.get(1));
+        String imageBase64 = arr.get(2);
+        Base64.Decoder decoder = Base64.getDecoder();
+        byte[] input = decoder.decode(imageBase64);
+        Image img = new Image(new ByteArrayInputStream(input));
+        canvas.getGraphicsContext2D().drawImage(img, x, y, img.getWidth(), img.getHeight());
     }
 
-    public void printBrushElement(List<List<Double>> coords, Double size, String colorString) {
-        GraphicsContext g = canvas.getGraphicsContext2D();
-        g.beginPath();
-        g.stroke();
-        for (List<Double> coord : coords) {
-            g.setFill(Paint.valueOf(colorString));
-            g.setStroke(Paint.valueOf(colorString));
-
-            g.lineTo(coord.get(0), coord.get(1));
-            g.setLineWidth(size);
-            g.stroke();
-            g.closePath();
-            g.beginPath();
-            g.moveTo(coord.get(0), coord.get(1));
-        }
-        g.stroke();
-        g.closePath();
-    }
 }
